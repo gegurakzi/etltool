@@ -1,0 +1,21 @@
+#!/bin/bash
+
+case $1 in
+  "webserver")
+    case $2 in
+      "start")
+        java \
+        -jar web/web-1.0-SNAPSHOT.jar
+        ;;
+      "stop")
+        echo "TODO"
+        ;;
+      *)
+        echo "unknown"
+        ;;
+    esac
+    ;;
+  *)
+    echo "unknown"
+    ;;
+esac
