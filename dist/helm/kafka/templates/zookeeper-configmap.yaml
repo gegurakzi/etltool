@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "zookeeper.configmapName" . }}
+data:
+  zookeeper.properties: |-
+    tickTime=5000
+    dataDir=/tmp/zookeeper
+    clientPort=2181
+    initLimit=5
+    syncLimit=2
+    quorumListenOnAllIPs=true
+    electionPortBindRetry=0
+    4lw.commands.whitelist=stat,ruok,conf,isro
+    {{- range $index := until (int .Values.zookeeper.replicaCount) }}
+    server.{{ $index }}={{ include "zookeeper.fullname" $ }}-{{ $index }}.{{ include "zookeeper.headlessName" $ }}:2888:3888
+    {{- end }}
+    ...

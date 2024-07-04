@@ -1,0 +1,89 @@
+# Default values for kafka.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+zookeeper:
+  replicaCount: 3
+  #nameOverride: ""
+  #fullnameOverride:
+  imagePullSecrets: {}
+  image:
+    repository: kafka
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  podSecurityContext: { }
+  securityContext: { }
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: false
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: true
+    # Annotations to add to the service account
+    annotations: { }
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+  resources: { }
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: [ ]
+  affinity: { }
+
+broker:
+  replicaCount: 3
+  #nameOverride: ""
+  #fullnameOverride: ""
+  imagePullSecrets: {}
+  image:
+    repository: kafka
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  podSecurityContext: { }
+  securityContext: { }
+  serviceAccount:
+    create: false
+    automount: true
+    annotations: { }
+    name: ""
+  resources: { }
+
+  nodeSelector: {}
+  tolerations: [ ]
+  affinity: { }
+
+connect:
+  replicaCount: 3
+  #nameOverride: ""
+  #fullnameOverride: ""
+  imagePullSecrets: {}
+  image:
+    repository: kafka
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  podSecurityContext: { }
+  securityContext: { }
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: false
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: true
+    # Annotations to add to the service account
+    annotations: { }
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+  resources: { }
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: [ ]
+  affinity: { }

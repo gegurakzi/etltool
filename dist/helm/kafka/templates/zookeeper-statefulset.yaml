@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "zookeeper.fullname" . }}
+spec:
+  replicas: {{ .Values.zookeeper.replicaCount }}
+  serviceName: {{ include "zookeeper.headlessName" . }}
+  selector:
+    matchLabels:
+      {{- include "zookeeper.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "zookeeper.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.zookeeper.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "zookeeper.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.zookeeper.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "zookeeper.name" . }}
+          securityContext:
+            {{- toYaml .Values.zookeeper.securityContext | nindent 12 }}
+          image: "{{ .Values.zookeeper.image.repository }}:{{ .Values.zookeeper.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.zookeeper.image.pullPolicy }}
+          ports:
+            - name: zookeeper
+              containerPort: 2181
+            - name: leader
+              containerPort: 2888
+            - name: election
+              containerPort: 3888
+            - name: broker
+              containerPort: 9092
+          env:
+            - name: POD_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - sh
+            - -c
+            - |
+              mkdir /tmp/zookeeper &&
+              echo ${POD_ID##*-} > /tmp/zookeeper/myid &&
+              zookeeper-server-start /etc/zookeeper/config/zookeeper.properties
+          resources:
+            {{- toYaml .Values.zookeeper.resources | nindent 12 }}
+          volumeMounts:
+            - name: configuration
+              mountPath: /etc/zookeeper/config
+      volumes:
+        - name: configuration
+          configMap:
+            name: {{ include "zookeeper.configmapName" . }}
+      {{- with .Values.zookeeper.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.zookeeper.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.zookeeper.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

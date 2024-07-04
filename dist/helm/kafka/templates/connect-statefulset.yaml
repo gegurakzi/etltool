@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "connect.fullname" . }}
+spec:
+  replicas: {{ .Values.connect.replicaCount }}
+  serviceName: {{ include "connect.headlessName" . }}
+  selector:
+    matchLabels:
+      {{- include "connect.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "connect.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: ping-zookeeper
+          image: "busybox:latest"
+          command:
+            - sh
+            - -c
+            - while
+                {{- range $index := until (int .Values.zookeeper.replicaCount) }}
+                [ "$(echo ruok | nc {{ include "zookeeper.fqdnWithIdx" (list $ $index) }} 2181)" != "imok" ] ||
+                {{- end }}
+                false;
+              do
+                echo "Waiting for Zookeeper server";
+                sleep 2;
+              done;
+      {{- with .Values.connect.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "connect.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.connect.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "connect.name" . }}
+          securityContext:
+            {{- toYaml .Values.connect.securityContext | nindent 12 }}
+          image: "{{ .Values.connect.image.repository }}:{{ .Values.connect.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.connect.image.pullPolicy }}
+          ports:
+            - name: connect
+              containerPort: 8083
+          env:
+            - name: POD_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - sh
+            - -c
+            - connect-distributed /etc/connect/config/connect-distributed.properties
+          resources:
+            {{- toYaml .Values.connect.resources | nindent 12 }}
+          volumeMounts:
+            - name: configuration
+              mountPath: /etc/connect/config
+      volumes:
+        - name: configuration
+          configMap:
+            name: {{ include "connect.configmapName" . }}
+      {{- with .Values.connect.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connect.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connect.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "broker.fullname" . }}
+spec:
+  replicas: {{ .Values.broker.replicaCount }}
+  serviceName: {{ include "broker.headlessName" . }}
+  selector:
+    matchLabels:
+      {{- include "broker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "broker.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: ping-zookeeper
+          image: "busybox:latest"
+          command:
+            - sh
+            - -c
+            - while
+                {{- range $index := until (int .Values.zookeeper.replicaCount) }}
+                [ "$(echo ruok | nc {{ include "zookeeper.fqdnWithIdx" (list $ $index) }} 2181)" != "imok" ] ||
+                {{- end }}
+                false;
+              do
+                echo "Waiting for Zookeeper server";
+                sleep 2;
+              done;
+      {{- with .Values.broker.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "broker.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.broker.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "broker.name" . }}
+          securityContext:
+            {{- toYaml .Values.broker.securityContext | nindent 12 }}
+          image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
+          ports:
+            - name: broker
+              containerPort: 9092
+          env:
+            - name: POD_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - sh
+            - -c
+            - kafka-server-start /etc/kafka/config/server.properties
+          resources:
+            {{- toYaml .Values.broker.resources | nindent 12 }}
+          volumeMounts:
+            - name: configuration
+              mountPath: /etc/kafka/config
+      volumes:
+        - name: configuration
+          configMap:
+            name: {{ include "broker.configmapName" . }}
+      {{- with .Values.broker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.broker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.broker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

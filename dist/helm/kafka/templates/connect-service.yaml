@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "connect.serviceName" . }}
+  labels:
+    {{- include "connect.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    - name: connect
+      port: 8083
+  selector:
+    {{- include "connect.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "broker.configmapName" . }}
+data:
+  server.properties: |-
+    broker.id.generation.enable=true
+    listeners=PLAINTEXT://:9092
+    zookeeper.connect={{ include "broker.config.zookeeper-connect" . }}
+    zookeeper.session.timeout.ms=60000
+    ...
+  connect.properties: |-
+    ...
